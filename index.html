@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Bass Play/Pause Button</title>
+</head>
+<body>
+  <audio id="bassAudio" src="bass.mp3"></audio>
+  <button id="playPauseBtn">Play</button>
+
+  <script>
+    const audio = document.getElementById('bassAudio');
+    const btn = document.getElementById('playPauseBtn');
+
+    btn.addEventListener('click', function() {
+      if (audio.paused) {
+        audio.play();
+        btn.textContent = 'Pause';
+      } else {
+        audio.pause();
+        btn.textContent = 'Play';
+      }
+    });
+
+    // Optional: Wenn das Audio zu Ende ist, Button wieder auf "Play" setzen
+    audio.addEventListener('ended', function() {
+      btn.textContent = 'Play';
+    });
+  </script>
+</body>
+</html>
