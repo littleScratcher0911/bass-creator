@@ -2,30 +2,101 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Bass Play/Pause Button</title>
+  <title>Bass Synth mit Reglern</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    .controls { margin: 1em 0; }
+    label { display: block; margin: 0.5em 0 0.1em; }
+    input[type=range] { width: 200px; }
+    button { margin-top: 1em; font-size: 1.2em; }
+  </style>
 </head>
 <body>
-  <audio id="bassAudio" src="bass.mp3"></audio>
-  <button id="playPauseBtn">Play</button>
+  <h1>Bass Synthesizer</h1>
+  <div class="controls">
+    <label for="frequency">Frequenz: <span id="freqValue">60</span> Hz</label>
+    <input type="range" id="frequency" min="30" max="200" value="60">
+    
+    <label for="gain">Lautstärke: <span id="gainValue">0.5</span></label>
+    <input type="range" id="gain" min="0" max="1" step="0.01" value="0.5">
+
+    <label for="filter">Tiefpass Filter (Hz): <span id="filterValue">400</span></label>
+    <input type="range" id="filter" min="50" max="2000" value="400">
+  </div>
+  
+  <button id="playPause">Play</button>
 
   <script>
-    const audio = document.getElementById('bassAudio');
-    const btn = document.getElementById('playPauseBtn');
+    let audioCtx;
+    let osc;
+    let gainNode;
+    let filterNode;
+    let isPlaying = false;
 
-    btn.addEventListener('click', function() {
-      if (audio.paused) {
-        audio.play();
-        btn.textContent = 'Pause';
-      } else {
-        audio.pause();
-        btn.textContent = 'Play';
+    const freqSlider = document.getElementById('frequency');
+    const gainSlider = document.getElementById('gain');
+    const filterSlider = document.getElementById('filter');
+    const freqValue = document.getElementById('freqValue');
+    const gainValue = document.getElementById('gainValue');
+    const filterValue = document.getElementById('filterValue');
+    const playPauseBtn = document.getElementById('playPause');
+
+    function setupAudio() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      osc = audioCtx.createOscillator();
+      osc.type = 'sawtooth'; // Alternativ: 'square', 'sine', 'triangle'
+      osc.frequency.value = freqSlider.value;
+
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = gainSlider.value;
+
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = "lowpass";
+      filterNode.frequency.value = filterSlider.value;
+
+      // Verkabelung
+      osc.connect(filterNode);
+      filterNode.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      osc.start();
+    }
+
+    function startBass() {
+      if (!audioCtx || audioCtx.state === 'closed') {
+        setupAudio();
+      } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
       }
-    });
+      isPlaying = true;
+      playPauseBtn.textContent = 'Pause';
+    }
 
-    // Optional: Wenn das Audio zu Ende ist, Button wieder auf "Play" setzen
-    audio.addEventListener('ended', function() {
-      btn.textContent = 'Play';
-    });
+    function stopBass() {
+      if (osc) osc.stop();
+      if (audioCtx) audioCtx.close();
+      isPlaying = false;
+      playPauseBtn.textContent = 'Play';
+    }
+
+    playPauseBtn.onclick = () => {
+      if (!isPlaying) startBass();
+      else stopBass();
+    };
+
+    // Regler-Events
+    freqSlider.oninput = e => {
+      freqValue.textContent = e.target.value;
+      if (osc) osc.frequency.value = e.target.value;
+    };
+    gainSlider.oninput = e => {
+      gainValue.textContent = e.target.value;
+      if (gainNode) gainNode.gain.value = e.target.value;
+    };
+    filterSlider.oninput = e => {
+      filterValue.textContent = e.target.value;
+      if (filterNode) filterNode.frequency.value = e.target.value;
+    };
   </script>
 </body>
 </html>
